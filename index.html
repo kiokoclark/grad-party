@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kioko Grad Party 2026</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <!-- ── HEADER ── -->
+      <header class="site-header" id="siteHeader">
+        <span class="eyebrow">You're Invited</span>
+        <h1>Celebrating<br /><em>Kioko</em></h1>
+        <div class="divider"><div class="divider-diamond"></div></div>
+        <p class="subtitle">Juris Doctor · Class of 2026</p>
+      </header>
+
+      <!-- ══════════════════════════════════════════
+       VIEW: RSVP FORM
+  ══════════════════════════════════════════ -->
+      <div id="rsvpView" class="view active">
+        <div class="card">
+          <!-- Step indicator -->
+          <div class="step-indicator" id="stepIndicator">
+            <div class="step-dot active" id="dot1">1</div>
+            <div class="step-line" id="line1"></div>
+            <div class="step-dot" id="dot2">2</div>
+          </div>
+
+          <!-- ── STEP 1 ── -->
+          <div id="step1">
+            <div class="form-group">
+              <label for="guestFirstName">First Name</label>
+              <input
+                type="text"
+                id="guestFirstName"
+                placeholder="Your first name"
+                autocomplete="given-name"
+              />
+              <div class="field-error" id="firstNameError"></div>
+            </div>
+            <div class="form-group">
+              <label for="guestLastName">Last Name</label>
+              <input
+                type="text"
+                id="guestLastName"
+                placeholder="Your last name"
+                autocomplete="family-name"
+              />
+              <div class="field-error" id="lastNameError"></div>
+            </div>
+            <div
+              class="field-error"
+              id="notFoundError"
+              style="margin-bottom: 12px; font-size: 13px"
+            ></div>
+            <button class="btn btn-primary" onclick="handleStep1()">
+              Continue →
+            </button>
+          </div>
+
+          <!-- ── STEP 2 ── -->
+          <div id="step2" style="display: none">
+            <button class="btn-back" onclick="goBack()">
+              <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                <path
+                  d="M5 1L1 5m0 0l4 4M1 5h12"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Back
+            </button>
+
+            <div class="match-banner show" id="matchBanner">
+              <span>👋</span>
+              <span
+                >Welcome,
+                <span class="match-name" id="matchedName"></span>!</span
+              >
+            </div>
+
+            <!-- Attendance -->
+            <div class="form-group">
+              <label>Will you be attending?</label>
+              <div class="radio-group">
+                <label
+                  ><input
+                    type="radio"
+                    name="attending"
+                    value="yes"
+                    onchange="handleAttendingChange()"
+                  />
+                  ✓ &nbsp;Joyfully accepts</label
+                >
+                <label
+                  ><input
+                    type="radio"
+                    name="attending"
+                    value="no"
+                    onchange="handleAttendingChange()"
+                  />
+                  ✗ &nbsp;Regretfully declines</label
+                >
+              </div>
+              <div class="field-error" id="attendingError"></div>
+            </div>
+
+            <!-- Fields shown only when attending -->
+            <div id="attendingFields" class="conditional-section">
+              <!-- Dietary -->
+              <div class="section-divider"></div>
+              <div class="form-group">
+                <label for="dietary">Dietary Restrictions or Allergies</label>
+                <input
+                  type="text"
+                  id="dietary"
+                  placeholder="e.g. vegetarian, gluten-free, nut allergy — or leave blank"
+                />
+              </div>
+
+              <!-- Plus One (conditional) -->
+              <div id="plusOneSection" class="conditional-section">
+                <div class="section-divider"></div>
+                <p class="section-label">Your Plus One</p>
+                <div class="form-group">
+                  <label>Are you bringing a guest?</label>
+                  <div class="radio-group">
+                    <label
+                      ><input type="radio" name="plusOne" value="yes" /> Yes,
+                      bringing a guest</label
+                    >
+                    <label
+                      ><input type="radio" name="plusOne" value="no" /> No, just
+                      me</label
+                    >
+                  </div>
+                </div>
+                <div
+                  id="plusOneNameGroup"
+                  class="form-group"
+                  style="display: none"
+                >
+                  <label for="plusOneName">Guest's Name</label>
+                  <input
+                    type="text"
+                    id="plusOneName"
+                    placeholder="Full name of your plus one"
+                  />
+                </div>
+              </div>
+
+              <!-- Children (conditional) -->
+              <div id="childrenSection" class="conditional-section">
+                <div class="section-divider"></div>
+                <p class="section-label">Little Ones</p>
+                <div class="form-group">
+                  <label>Will you be bringing children?</label>
+                  <div class="radio-group">
+                    <label
+                      ><input
+                        type="radio"
+                        name="children"
+                        value="yes"
+                        onchange="handleChildrenChange()"
+                      />
+                      Yes</label
+                    >
+                    <label
+                      ><input
+                        type="radio"
+                        name="children"
+                        value="no"
+                        onchange="handleChildrenChange()"
+                      />
+                      No</label
+                    >
+                  </div>
+                </div>
+                <div
+                  id="childNamesGroup"
+                  class="form-group conditional-section"
+                >
+                  <label for="childNames">Children's Names &amp; Ages</label>
+                  <input
+                    type="text"
+                    id="childNames"
+                    placeholder="e.g. Emma (7), Jack (4)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 28px">
+              <button
+                class="btn btn-primary"
+                id="submitBtn"
+                onclick="handleSubmit()"
+              >
+                Send RSVP
+              </button>
+            </div>
+            <div
+              class="field-error"
+              id="submitError"
+              style="margin-top: 10px; text-align: center"
+            ></div>
+          </div>
+        </div>
+        <!-- /card -->
+      </div>
+      <!-- /rsvpView -->
+
+      <!-- ══════════════════════════════════════════
+       VIEW: SUCCESS
+  ══════════════════════════════════════════ -->
+      <div id="successView" class="view">
+        <div class="card">
+          <div class="success-screen">
+            <div class="success-icon">🥂</div>
+            <h2 id="successTitle">We'll see you there!</h2>
+            <p id="successMsg">
+              Thank you for your RSVP. We can't wait to celebrate with you.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+       VIEW: ADMIN
+  ══════════════════════════════════════════ -->
+      <div id="adminView" class="view">
+        <div class="card" style="padding: 32px 28px">
+          <!-- Login screen -->
+          <div id="adminLogin" class="admin-login">
+            <h2>Admin Access</h2>
+            <p>
+              Enter your admin password to manage the guest list. If this is
+              your first time, enter any password to set it.
+            </p>
+            <div class="form-group">
+              <label for="adminPw">Password</label>
+              <input
+                type="text"
+                id="adminPw"
+                placeholder="Enter admin password"
+                onkeydown="if (event.key === 'Enter') checkAdminPw();"
+              />
+            </div>
+            <button class="btn btn-primary" onclick="checkAdminPw()">
+              Unlock
+            </button>
+            <div
+              class="field-error"
+              id="adminPwError"
+              style="margin-top: 10px; text-align: center"
+            ></div>
+          </div>
+
+          <!-- Admin panel (shown after login) -->
+          <div id="adminPanel" style="display: none">
+            <div class="admin-bar">
+              <h2>Guest Manager</h2>
+              <button class="btn btn-secondary" onclick="adminLogout()">
+                Sign out
+              </button>
+            </div>
+
+            <div class="admin-tabs">
+              <button class="tab-btn active" onclick="switchTab('guests')">
+                Guest List
+              </button>
+              <button class="tab-btn" onclick="switchTab('responses')">
+                RSVPs
+              </button>
+              <button class="tab-btn" onclick="switchTab('settings')">
+                Settings
+              </button>
+            </div>
+
+            <!-- ── TAB: Guests ── -->
+            <div id="tabGuests" class="tab-content active">
+              <div class="add-guest-form" id="addGuestForm">
+                <h3 id="guestFormTitle">Add a Guest</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="agFirst">First Name</label>
+                    <input type="text" id="agFirst" placeholder="First" />
+                  </div>
+                  <div class="form-group">
+                    <label for="agLast">Last Name</label>
+                    <input type="text" id="agLast" placeholder="Last" />
+                  </div>
+                </div>
+                <div class="checkbox-row">
+                  <input type="checkbox" id="agPlusOne" />
+                  <label for="agPlusOne">Allowed to bring a Plus One</label>
+                </div>
+                <div class="checkbox-row">
+                  <input type="checkbox" id="agChildren" />
+                  <label for="agChildren">Allowed to bring Children</label>
+                </div>
+                <div
+                  class="field-error"
+                  id="agError"
+                  style="margin: 6px 0"
+                ></div>
+                <div style="display: flex; gap: 8px; margin-top: 6px">
+                  <button
+                    class="btn btn-primary"
+                    style="width: auto; padding: 11px 24px"
+                    onclick="saveGuest()"
+                  >
+                    Save Guest
+                  </button>
+                  <button
+                    class="btn btn-secondary"
+                    onclick="cancelEdit()"
+                    id="cancelEditBtn"
+                    style="display: none"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <div id="guestListWrap">
+                <table class="guest-table" id="guestTable">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Permissions</th>
+                      <th style="width: 80px"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="guestTbody"></tbody>
+                </table>
+                <div class="empty-state" id="guestEmpty" style="display: none">
+                  No guests added yet. Add your first guest above.
+                </div>
+              </div>
+
+              <div
+                style="
+                  margin-top: 16px;
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  class="btn btn-secondary"
+                  onclick="exportGuestList()"
+                  style="font-size: 10px"
+                >
+                  ↓ Export JSON
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  onclick="importGuestList()"
+                  style="font-size: 10px"
+                >
+                  ↑ Import JSON
+                </button>
+                <input
+                  type="file"
+                  id="importFile"
+                  accept=".json"
+                  style="display: none"
+                  onchange="handleImport(event)"
+                />
+              </div>
+            </div>
+
+            <!-- ── TAB: Responses ── -->
+            <div id="tabResponses" class="tab-content">
+              <div class="info-box">
+                <strong>Google Sheets</strong>
+                Responses are submitted to your Google Apps Script webhook. They
+                appear here if you're using local-only mode (see Settings). If
+                your Sheet is configured, check it directly for submissions.
+              </div>
+              <div id="responseListWrap">
+                <table class="resp-table" id="respTable">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Attending</th>
+                      <th>Dietary</th>
+                      <th>+1</th>
+                      <th>Kids</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="respTbody"></tbody>
+                </table>
+                <div class="empty-state" id="respEmpty" style="display: none">
+                  No responses yet.
+                </div>
+              </div>
+              <div style="margin-top: 12px; display: flex; gap: 8px">
+                <button
+                  class="btn btn-secondary"
+                  onclick="exportResponses()"
+                  style="font-size: 10px"
+                >
+                  ↓ Export CSV
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  onclick="clearResponses()"
+                  style="font-size: 10px; color: var(--error)"
+                >
+                  Clear Local
+                </button>
+              </div>
+            </div>
+
+            <!-- ── TAB: Settings ── -->
+            <div id="tabSettings" class="tab-content">
+              <div class="form-group">
+                <label for="settingTitle">Party / Honoree Name</label>
+                <input type="text" id="settingTitle" placeholder="Sarah" />
+              </div>
+              <div class="form-group">
+                <label for="settingSubtitle">Subtitle / Degree</label>
+                <input
+                  type="text"
+                  id="settingSubtitle"
+                  placeholder="Juris Doctor · Class of 2025"
+                />
+              </div>
+              <div class="form-group">
+                <label for="settingAdminPw">Change Admin Password</label>
+                <input
+                  type="text"
+                  id="settingAdminPw"
+                  placeholder="New password"
+                />
+              </div>
+              <div class="form-group">
+                <label for="settingSheetUrl"
+                  >Google Apps Script Webhook URL</label
+                >
+                <input
+                  type="text"
+                  id="settingSheetUrl"
+                  placeholder="https://script.google.com/macros/s/YOUR_ID/exec"
+                />
+                <div
+                  style="font-size: 11px; color: var(--muted); margin-top: 5px"
+                >
+                  Paste your deployed Apps Script URL here. See instructions
+                  below.
+                </div>
+              </div>
+              <div
+                class="form-group"
+                style="display: flex; align-items: center; gap: 10px"
+              >
+                <input
+                  type="checkbox"
+                  id="settingLocalOnly"
+                  style="width: 15px; height: 15px; accent-color: var(--gold)"
+                />
+                <label
+                  for="settingLocalOnly"
+                  style="
+                    font-size: 12px;
+                    text-transform: none;
+                    letter-spacing: 0;
+                    margin: 0;
+                    cursor: pointer;
+                  "
+                  >Also save responses locally (in browser) for admin
+                  review</label
+                >
+              </div>
+              <button
+                class="btn btn-primary"
+                style="width: auto; padding: 11px 24px"
+                onclick="saveSettings()"
+              >
+                Save Settings
+              </button>
+
+              <div class="section-divider"></div>
+              <div class="info-box" style="margin-top: 0">
+                <strong>Google Sheets Setup (5 minutes)</strong>
+                1. Open Google Sheets and create a new spreadsheet.<br />
+                2. Add headers in Row 1:
+                <code
+                  >Timestamp, Name, Attending, Dietary, PlusOne, PlusOneName,
+                  Children, ChildNames</code
+                ><br />
+                3. Go to <b>Extensions → Apps Script</b> and paste the script
+                below.<br />
+                4. Click <b>Deploy → New deployment → Web App</b>. Set "Who has
+                access" to <b>Anyone</b>.<br />
+                5. Copy the URL and paste it above.
+              </div>
+              <details style="font-size: 12px; margin-top: 8px">
+                <summary
+                  style="
+                    cursor: pointer;
+                    color: var(--gold);
+                    letter-spacing: 0.1em;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                  "
+                >
+                  View Apps Script Code
+                </summary>
+                <pre
+                  style="
+                    background: var(--navy);
+                    color: #c9a84c;
+                    padding: 16px;
+                    margin-top: 10px;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    overflow-x: auto;
+                    border-radius: 2px;
+                    white-space: pre-wrap;
+                  "
+                >
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    new Date().toLocaleString(),
+    data.name,
+    data.attending,
+    data.dietary || '',
+    data.plusOne || '',
+    data.plusOneName || '',
+    data.children || '',
+    data.childNames || ''
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({result:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre
+                >
+              </details>
+            </div>
+          </div>
+          <!-- /adminPanel -->
+        </div>
+        <!-- /card -->
+      </div>
+      <!-- /adminView -->
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="app.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
