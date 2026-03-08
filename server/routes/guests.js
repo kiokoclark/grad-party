@@ -32,12 +32,13 @@ router.post('/lookup', async (req, res) => {
   if (best && bestScore <= 3) {
     const fullName = best.first_name + ' ' + best.last_name;
     const { rows: existing } = await db.execute({
-      sql: 'SELECT id FROM responses WHERE name = ?',
+      sql: 'SELECT id, attending FROM responses WHERE name = ?',
       args: [fullName]
     });
     return res.json({
       found: true,
       alreadyRsvped: existing.length > 0,
+      priorAttending: existing.length > 0 ? existing[0].attending : null,
       guest: {
         id: best.id, firstName: best.first_name, lastName: best.last_name,
         plusOne: !!best.plus_one, children: !!best.children

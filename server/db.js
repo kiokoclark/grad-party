@@ -37,11 +37,7 @@ async function init() {
   const existing = await db.execute("SELECT value FROM settings WHERE key = 'adminPwHash'");
   if (existing.rows.length === 0) {
     const hash = bcrypt.hashSync('/admin-for-sam', 10);
-    await db.batch([
-      { sql: "INSERT OR IGNORE INTO settings (key, value) VALUES ('title', 'Kioko')" },
-      { sql: "INSERT OR IGNORE INTO settings (key, value) VALUES ('subtitle', 'Juris Doctor · Class of 2026')" },
-      { sql: "INSERT OR IGNORE INTO settings (key, value) VALUES ('adminPwHash', ?)", args: [hash] },
-    ], 'write');
+    await db.execute({ sql: "INSERT OR IGNORE INTO settings (key, value) VALUES ('adminPwHash', ?)", args: [hash] });
   }
 }
 

@@ -3,7 +3,6 @@ import {
   adminLogin, changePassword,
   getGuests, addGuest, updateGuest, deleteGuest, importGuests,
   getResponses, clearResponses,
-  getSettings, updateSettings,
 } from '../api';
 
 export default function AdminPage() {
@@ -39,9 +38,16 @@ function LoginScreen({ onLogin }) {
   return (
     <div className="page">
       <header className="site-header">
-        <span className="eyebrow">You're Invited</span>
-        <h1>Celebrating<br /><em>Kioko</em></h1>
-        <div className="divider"><div className="divider-diamond"></div></div>
+        <span className="eyebrow">For Sam</span>
+        <h1>Guest Manager</h1>
+        <div className="divider">
+          <svg className="illustrated-marg" viewBox="0 0 44 46" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="currentColor" d="M 4,8 C 4,18 12,26 14,26 L 26,26 C 28,26 36,18 36,8 Z"/>
+            <rect fill="currentColor" x="18" y="26" width="4" height="10" rx="1"/>
+            <rect fill="currentColor" x="9" y="39" width="22" height="3" rx="1.5"/>
+            <path fill="#4caf50" d="M 28,8 A 6,6 0 0,1 40,8 Z"/>
+          </svg>
+        </div>
       </header>
       <div className="view active">
         <div className="card" style={{padding: '32px 28px'}}>
@@ -73,9 +79,9 @@ function AdminPanel({ onLogout }) {
   }
 
   return (
-    <div className="page">
+    <div className="page admin-page">
       <div className="view active">
-        <div className="card" style={{padding: '32px 28px'}}>
+        <div className="card admin-card" style={{padding: '32px 28px'}}>
           <div className="admin-bar">
             <h2>Guest Manager</h2>
             <button className="btn btn-secondary" onClick={onLogout}>Sign out</button>
@@ -261,33 +267,22 @@ function ResponsesTab({ toast }) {
 }
 
 function SettingsTab({ toast }) {
-  const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
   const [newPw, setNewPw] = useState('');
 
-  useEffect(() => { getSettings().then(s => { setTitle(s.title || ''); setSubtitle(s.subtitle || ''); }); }, []);
-
   async function save() {
-    await updateSettings({ title, subtitle });
-    if (newPw) { await changePassword(newPw); setNewPw(''); }
-    toast('Settings saved!');
+    if (!newPw) return;
+    await changePassword(newPw);
+    setNewPw('');
+    toast('Password updated!');
   }
 
   return (
     <div className="tab-content active">
       <div className="form-group">
-        <label>Party / Honoree Name</label>
-        <input type="text" placeholder="Kioko" value={title} onChange={e => setTitle(e.target.value)} />
-      </div>
-      <div className="form-group">
-        <label>Subtitle / Degree</label>
-        <input type="text" placeholder="Juris Doctor · Class of 2026" value={subtitle} onChange={e => setSubtitle(e.target.value)} />
-      </div>
-      <div className="form-group">
         <label>Change Admin Password</label>
-        <input type="password" placeholder="New password (leave blank to keep current)" value={newPw} onChange={e => setNewPw(e.target.value)} />
+        <input type="password" placeholder="New password" value={newPw} onChange={e => setNewPw(e.target.value)} />
       </div>
-      <button className="btn btn-primary" style={{width:'auto',padding:'11px 24px'}} onClick={save}>Save Settings</button>
+      <button className="btn btn-primary" style={{width:'auto',padding:'11px 24px'}} onClick={save}>Update Password</button>
     </div>
   );
 }
