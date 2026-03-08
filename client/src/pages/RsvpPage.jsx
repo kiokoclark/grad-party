@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { lookupGuest, submitRsvp } from '../api';
 
 export default function RsvpPage() {
@@ -86,6 +86,7 @@ export default function RsvpPage() {
 
     return (
       <div className="page">
+        <Confetti />
         <header className="site-header">
           <h1>Excited to Celebrate<br />with You</h1>
           <div className="divider">
@@ -295,6 +296,107 @@ export default function RsvpPage() {
       </div>
     </div>
   );
+}
+
+function Confetti() {
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText =
+      'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = ['#0588a5', '#ee3f3b', '#fbaf1b', '#ef813f'];
+    const particles = [];
+
+    // Bottom launch burst
+    for (let i = 0; i < 130; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: canvas.height + 10,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -(Math.random() * 16 + 8),
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        wide: Math.random() * 7 + 4,
+        tall: Math.random() * 4 + 3,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.25,
+        alpha: 1,
+        circle: Math.random() < 0.3,
+      });
+    }
+
+    // H1 drizzle — originates near top of page, falls down
+    for (let i = 0; i < 60; i++) {
+      const x = canvas.width * 0.5 + (Math.random() - 0.5) * Math.min(canvas.width * 0.7, 420);
+      particles.push({
+        x,
+        y: 60 + Math.random() * 60,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: Math.random() * 1.5 + 0.5,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        wide: Math.random() * 5 + 3,
+        tall: Math.random() * 3 + 2,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.18,
+        alpha: 0,
+        alphaIn: Math.random() * 0.03 + 0.01,
+        circle: Math.random() < 0.3,
+      });
+    }
+
+    const gravity = 0.32;
+    const startTime = Date.now();
+    let rafId;
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const elapsed = (Date.now() - startTime) / 1000;
+      let alive = false;
+
+      for (const p of particles) {
+        p.vy += gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotSpeed;
+
+        if (p.alphaIn && p.alpha < 1) p.alpha = Math.min(1, p.alpha + p.alphaIn);
+        if (elapsed > 2.8) p.alpha -= 0.014;
+        if (p.alpha <= 0) continue;
+        alive = true;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        if (p.circle) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.wide / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.wide / 2, -p.tall / 2, p.wide, p.tall);
+        }
+        ctx.restore();
+      }
+
+      if (alive && elapsed < 7) {
+        rafId = requestAnimationFrame(animate);
+      } else {
+        canvas.remove();
+      }
+    }
+
+    rafId = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(rafId);
+      canvas.remove();
+    };
+  }, []);
+
+  return null;
 }
 
 function Header() {
