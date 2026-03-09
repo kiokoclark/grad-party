@@ -4,11 +4,7 @@ const cors = require("cors");
 
 const app = express();
 
-const allowedOrigins = (process.env.CLIENT_URL || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : "*" }));
+app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
 app.use(express.json());
 
 app.use("/api/admin", require("./routes/admin"));
