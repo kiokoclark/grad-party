@@ -271,7 +271,7 @@ export default function RsvpPage() {
 
           {step === 2 && (
             <div>
-              {collectedRsvps.length === 0 && (
+              {(allPartyMembers.length === 0 || allPartyMembers[0]?.id === currentGuest?.id) && (
                 <button className="btn-back" onClick={() => setStep(1)}>
                   <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
                     <path d="M5 1L1 5m0 0l4 4M1 5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
