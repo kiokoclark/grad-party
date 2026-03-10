@@ -1,17 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { lookupGuest, submitRsvp } from '../api';
 
 export default function RsvpPage() {
   const [view, setView] = useState('form'); // 'form' | 'thankyou' | 'declined'
   const [step, setStep] = useState(1);
 
+  // Step 1 fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [firstNameErr, setFirstNameErr] = useState('');
   const [lastNameErr, setLastNameErr] = useState('');
   const [notFoundErr, setNotFoundErr] = useState('');
 
+  // Current guest + party state
   const [currentGuest, setCurrentGuest] = useState(null);
+  const [allPartyMembers, setAllPartyMembers] = useState([]); // everyone in the party inc. self
+  const [partyQueue, setPartyQueue] = useState([]);           // members still to RSVP
+
+  // Step 2 form fields
   const [attending, setAttending] = useState('');
   const [dietary, setDietary] = useState('');
   const [plusOne, setPlusOne] = useState('');
@@ -21,6 +27,21 @@ export default function RsvpPage() {
   const [attendingErr, setAttendingErr] = useState('');
   const [submitErr, setSubmitErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const isFirstRender = useRef(true);
+
+  // Scroll to top and focus h1 on every step/view transition (not on initial render)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const h1 = document.querySelector('.site-header h1');
+    if (h1) { h1.setAttribute('tabindex', '-1'); h1.focus({ preventScroll: true }); }
+  }, [step, view]);
+
+  function resetRsvpForm() {
+    setAttending(''); setDietary(''); setPlusOne(''); setPlusOneName('');
+    setChildren(''); setChildNames(''); setAttendingErr(''); setSubmitErr('');
+  }
 
   async function handleStep1() {
     setFirstNameErr(''); setLastNameErr(''); setNotFoundErr('');
@@ -38,8 +59,44 @@ export default function RsvpPage() {
       setView(res.priorAttending === 'no' ? 'declined' : 'thankyou');
       return;
     }
+
     setCurrentGuest(res.guest);
+    resetRsvpForm();
+
+    if (res.partyMembers && res.partyMembers.length > 0) {
+      setAllPartyMembers([res.guest, ...res.partyMembers]);
+      setPartyQueue(res.partyMembers.filter(m => !m.alreadyRsvped));
+    } else {
+      setAllPartyMembers([]);
+      setPartyQueue([]);
+    }
+
     setStep(2);
+  }
+
+  async function handleNextPartyMember() {
+    setAttendingErr(''); setSubmitErr('');
+    if (!attending) { setAttendingErr('Please select an option.'); return; }
+
+    setSubmitting(true);
+    try {
+      await submitRsvp({
+        name: `${currentGuest.firstName} ${currentGuest.lastName}`,
+        attending, dietary, plusOne,
+        plusOneName: plusOne === 'yes' ? plusOneName : '',
+        children,
+        childNames: children === 'yes' ? childNames : '',
+      });
+      const [next, ...remaining] = partyQueue;
+      setPartyQueue(remaining);
+      setCurrentGuest(next);
+      resetRsvpForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      setSubmitErr('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleSubmit() {
@@ -49,10 +106,8 @@ export default function RsvpPage() {
     setSubmitting(true);
     try {
       await submitRsvp({
-        name: currentGuest.firstName + ' ' + currentGuest.lastName,
-        attending,
-        dietary,
-        plusOne,
+        name: `${currentGuest.firstName} ${currentGuest.lastName}`,
+        attending, dietary, plusOne,
         plusOneName: plusOne === 'yes' ? plusOneName : '',
         children,
         childNames: children === 'yes' ? childNames : '',
@@ -175,6 +230,9 @@ export default function RsvpPage() {
     );
   }
 
+  // Party member names to show in the banner (everyone in the party except the current guest)
+  const partyOthers = allPartyMembers.filter(m => m.id !== currentGuest?.id);
+
   return (
     <div className="page">
       <Header />
@@ -213,22 +271,40 @@ export default function RsvpPage() {
 
           {step === 2 && (
             <div>
-              <button className="btn-back" onClick={() => setStep(1)}>
-                <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
-                  <path d="M5 1L1 5m0 0l4 4M1 5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Back
-              </button>
+              {collectedRsvps.length === 0 && (
+                <button className="btn-back" onClick={() => setStep(1)}>
+                  <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                    <path d="M5 1L1 5m0 0l4 4M1 5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Back
+                </button>
+              )}
 
               <div className="match-banner show">
                 <span>Welcome, <span className="match-name">{currentGuest?.firstName} {currentGuest?.lastName}</span></span>
+                {partyOthers.length > 0 && (
+                  <div className="party-members-info">
+                    You are part of a party with:{' '}
+                    {partyOthers.map(m =>
+                      `${m.firstName} ${m.lastName}${m.alreadyRsvped ? ' (already responded)' : ''}`
+                    ).join(', ')}
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
                 <label>Will you be attending?</label>
                 <div className="radio-group">
-                  <label><input type="radio" name="attending" value="yes" onChange={() => setAttending('yes')} /> Yes, can't wait!</label>
-                  <label><input type="radio" name="attending" value="no"  onChange={() => setAttending('no')}  /> I can't make it</label>
+                  <label>
+                    <input type="radio" name="attending" value="yes"
+                      checked={attending === 'yes'} onChange={() => setAttending('yes')} />
+                    Yes, can't wait!
+                  </label>
+                  <label>
+                    <input type="radio" name="attending" value="no"
+                      checked={attending === 'no'} onChange={() => setAttending('no')} />
+                    I can't make it
+                  </label>
                 </div>
                 {attendingErr && <div className="field-error">{attendingErr}</div>}
               </div>
@@ -248,8 +324,16 @@ export default function RsvpPage() {
                     <div className="form-group">
                       <label>Are you bringing a guest?</label>
                       <div className="radio-group">
-                        <label><input type="radio" name="plusOne" value="yes" onChange={() => setPlusOne('yes')} /> Yes, bringing a guest</label>
-                        <label><input type="radio" name="plusOne" value="no"  onChange={() => setPlusOne('no')}  /> No, just me</label>
+                        <label>
+                          <input type="radio" name="plusOne" value="yes"
+                            checked={plusOne === 'yes'} onChange={() => setPlusOne('yes')} />
+                          Yes, bringing a guest
+                        </label>
+                        <label>
+                          <input type="radio" name="plusOne" value="no"
+                            checked={plusOne === 'no'} onChange={() => setPlusOne('no')} />
+                          No, just me
+                        </label>
                       </div>
                     </div>
                     {plusOne === 'yes' && (
@@ -269,8 +353,16 @@ export default function RsvpPage() {
                     <div className="form-group">
                       <label>Will you be bringing children?</label>
                       <div className="radio-group">
-                        <label><input type="radio" name="children" value="yes" onChange={() => setChildren('yes')} /> Yes</label>
-                        <label><input type="radio" name="children" value="no"  onChange={() => setChildren('no')}  /> No</label>
+                        <label>
+                          <input type="radio" name="children" value="yes"
+                            checked={children === 'yes'} onChange={() => setChildren('yes')} />
+                          Yes
+                        </label>
+                        <label>
+                          <input type="radio" name="children" value="no"
+                            checked={children === 'no'} onChange={() => setChildren('no')} />
+                          No
+                        </label>
                       </div>
                     </div>
                     {children === 'yes' && (
@@ -285,6 +377,11 @@ export default function RsvpPage() {
               </div>
 
               <div style={{marginTop: 28}}>
+                {partyQueue.length > 0 && (
+                  <button className="btn-next-party" onClick={handleNextPartyMember} disabled={submitting}>
+                    {submitting ? 'Saving…' : `RSVP for ${partyQueue[0].firstName} ${partyQueue[0].lastName} →`}
+                  </button>
+                )}
                 <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
                   {submitting ? 'Sending…' : 'Send RSVP'}
                 </button>

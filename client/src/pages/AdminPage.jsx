@@ -109,6 +109,7 @@ function GuestsTab({ toast }) {
   const [last, setLast] = useState('');
   const [plusOne, setPlusOne] = useState(false);
   const [children, setChildren] = useState(false);
+  const [partyTag, setPartyTag] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [err, setErr] = useState('');
 
@@ -118,19 +119,20 @@ function GuestsTab({ toast }) {
   function startEdit(g) {
     setFirst(g.firstName); setLast(g.lastName);
     setPlusOne(g.plusOne); setChildren(g.children);
+    setPartyTag(g.partyTag || '');
     setEditingId(g.id); setErr('');
   }
   function cancelEdit() {
     setFirst(''); setLast(''); setPlusOne(false); setChildren(false);
-    setEditingId(null); setErr('');
+    setPartyTag(''); setEditingId(null); setErr('');
   }
 
   async function save() {
     if (!first.trim() || !last.trim()) { setErr('First and last name are required.'); return; }
     if (editingId) {
-      await updateGuest(editingId, { firstName: first, lastName: last, plusOne, children });
+      await updateGuest(editingId, { firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null });
     } else {
-      await addGuest({ firstName: first, lastName: last, plusOne, children });
+      await addGuest({ firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null });
     }
     cancelEdit(); load(); toast('Guest saved!');
   }
@@ -178,6 +180,16 @@ function GuestsTab({ toast }) {
           <input type="checkbox" id="agChildren" checked={children} onChange={e => setChildren(e.target.checked)} />
           <label htmlFor="agChildren">Allowed to bring Children</label>
         </div>
+        <div className="form-group" style={{marginTop: 10}}>
+          <label>Party Tag <span style={{fontWeight:300,textTransform:'none',letterSpacing:0}}>(optional — guests with same tag can RSVP together)</span></label>
+          <input type="text" list="partyTagList" placeholder="e.g. smith-family"
+            value={partyTag} onChange={e => setPartyTag(e.target.value)} />
+          <datalist id="partyTagList">
+            {[...new Set(guests.filter(g => g.partyTag).map(g => g.partyTag))].map(t => (
+              <option key={t} value={t} />
+            ))}
+          </datalist>
+        </div>
         {err && <div className="field-error" style={{margin:'6px 0'}}>{err}</div>}
         <div style={{display:'flex',gap:8,marginTop:6}}>
           <button className="btn btn-primary" style={{width:'auto',padding:'11px 24px'}} onClick={save}>Save Guest</button>
@@ -194,7 +206,8 @@ function GuestsTab({ toast }) {
               <td>
                 {g.plusOne && <span className="badge badge-plus">+ Plus One</span>}
                 {g.children && <span className="badge badge-child">Children</span>}
-                {!g.plusOne && !g.children && <span className="badge badge-none">No extras</span>}
+                {g.partyTag && <span className="badge badge-party">Party: {g.partyTag}</span>}
+                {!g.plusOne && !g.children && !g.partyTag && <span className="badge badge-none">No extras</span>}
               </td>
               <td>
                 <button className="icon-btn" onClick={() => startEdit(g)} title="Edit">✏️</button>

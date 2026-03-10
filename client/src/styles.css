@@ -160,8 +160,12 @@ body::before {
   );
 }
 @media (max-width: 480px) {
+  .page {
+    padding-left: 36px;
+    padding-right: 36px;
+  }
   .card {
-    padding: 32px 24px;
+    padding: 32px 20px;
   }
 }
 
@@ -878,6 +882,44 @@ select {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ── PARTY FLOW ── */
+.match-banner {
+  flex-direction: column;
+}
+.party-members-info {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.btn-next-party {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: none;
+  border: 1px solid var(--navy);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--navy);
+  padding: 13px;
+  margin-bottom: 10px;
+  transition: var(--transition);
+}
+.btn-next-party:hover {
+  background: var(--navy);
+  color: var(--white);
+}
+.badge-party {
+  background: rgba(5, 136, 165, 0.12);
+  color: #046d88;
 }
 
 /* Pagination */

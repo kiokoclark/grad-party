@@ -19,7 +19,7 @@ router.post('/lookup', async (req, res) => {
 
   const { rows } = await db.execute('SELECT * FROM guests');
   if (rows.length === 0) {
-    return res.json({ found: true, guest: { firstName, lastName, plusOne: false, children: false } });
+    return res.json({ found: true, guest: { firstName, lastName, plusOne: false, children: false }, partyMembers: [] });
   }
 
   const nf = normalize(firstName), nl = normalize(lastName);
@@ -32,17 +32,45 @@ router.post('/lookup', async (req, res) => {
   if (best && bestScore <= 3) {
     const fullName = best.first_name + ' ' + best.last_name;
     const { rows: existing } = await db.execute({
-      sql: 'SELECT id, attending FROM responses WHERE name = ?',
+      sql: 'SELECT attending FROM responses WHERE name = ?',
       args: [fullName]
     });
+
+    let partyMembers = [];
+    if (best.party_tag) {
+      const { rows: partyRows } = await db.execute({
+        sql: 'SELECT * FROM guests WHERE party_tag = ? AND id != ?',
+        args: [best.party_tag, best.id]
+      });
+      partyMembers = await Promise.all(partyRows.map(async pm => {
+        const pmName = pm.first_name + ' ' + pm.last_name;
+        const { rows: pmExisting } = await db.execute({
+          sql: 'SELECT attending FROM responses WHERE name = ?',
+          args: [pmName]
+        });
+        return {
+          id: pm.id,
+          firstName: pm.first_name,
+          lastName: pm.last_name,
+          plusOne: !!pm.plus_one,
+          children: !!pm.children,
+          partyTag: pm.party_tag,
+          alreadyRsvped: pmExisting.length > 0,
+          priorAttending: pmExisting.length > 0 ? pmExisting[0].attending : null,
+        };
+      }));
+    }
+
     return res.json({
       found: true,
       alreadyRsvped: existing.length > 0,
       priorAttending: existing.length > 0 ? existing[0].attending : null,
       guest: {
         id: best.id, firstName: best.first_name, lastName: best.last_name,
-        plusOne: !!best.plus_one, children: !!best.children
-      }
+        plusOne: !!best.plus_one, children: !!best.children,
+        partyTag: best.party_tag || null,
+      },
+      partyMembers,
     });
   }
   res.json({ found: false });
@@ -51,26 +79,30 @@ router.post('/lookup', async (req, res) => {
 // GET /api/guests  (admin)
 router.get('/', requireAuth, async (req, res) => {
   const { rows } = await db.execute('SELECT * FROM guests ORDER BY last_name, first_name');
-  res.json(rows.map(g => ({ id: g.id, firstName: g.first_name, lastName: g.last_name, plusOne: !!g.plus_one, children: !!g.children })));
+  res.json(rows.map(g => ({
+    id: g.id, firstName: g.first_name, lastName: g.last_name,
+    plusOne: !!g.plus_one, children: !!g.children,
+    partyTag: g.party_tag || null,
+  })));
 });
 
 // POST /api/guests  (admin)
 router.post('/', requireAuth, async (req, res) => {
-  const { firstName, lastName, plusOne, children } = req.body;
+  const { firstName, lastName, plusOne, children, partyTag } = req.body;
   if (!firstName || !lastName) return res.status(400).json({ error: 'Name required' });
   const result = await db.execute({
-    sql: 'INSERT INTO guests (first_name, last_name, plus_one, children) VALUES (?, ?, ?, ?)',
-    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0]
+    sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag) VALUES (?, ?, ?, ?, ?)',
+    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null]
   });
-  res.json({ id: Number(result.lastInsertRowid), firstName, lastName, plusOne: !!plusOne, children: !!children });
+  res.json({ id: Number(result.lastInsertRowid), firstName, lastName, plusOne: !!plusOne, children: !!children, partyTag: partyTag || null });
 });
 
 // PUT /api/guests/:id  (admin)
 router.put('/:id', requireAuth, async (req, res) => {
-  const { firstName, lastName, plusOne, children } = req.body;
+  const { firstName, lastName, plusOne, children, partyTag } = req.body;
   await db.execute({
-    sql: 'UPDATE guests SET first_name=?, last_name=?, plus_one=?, children=? WHERE id=?',
-    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, req.params.id]
+    sql: 'UPDATE guests SET first_name=?, last_name=?, plus_one=?, children=?, party_tag=? WHERE id=?',
+    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null, req.params.id]
   });
   res.json({ ok: true });
 });
@@ -87,7 +119,10 @@ router.post('/import', requireAuth, async (req, res) => {
   if (!Array.isArray(guests)) return res.status(400).json({ error: 'Expected array' });
   const stmts = [{ sql: 'DELETE FROM guests', args: [] }];
   for (const g of guests) {
-    stmts.push({ sql: 'INSERT INTO guests (first_name, last_name, plus_one, children) VALUES (?, ?, ?, ?)', args: [g.firstName, g.lastName, g.plusOne ? 1 : 0, g.children ? 1 : 0] });
+    stmts.push({
+      sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag) VALUES (?, ?, ?, ?, ?)',
+      args: [g.firstName, g.lastName, g.plusOne ? 1 : 0, g.children ? 1 : 0, g.partyTag || null]
+    });
   }
   await db.batch(stmts, 'write');
   res.json({ imported: guests.length });
