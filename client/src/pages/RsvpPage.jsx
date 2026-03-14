@@ -308,9 +308,13 @@ export default function RsvpPage() {
                 {partyOthers.length > 0 && (
                   <div className="party-members-info">
                     You are part of a party with:{' '}
-                    {partyOthers.map(m =>
-                      `${m.firstName} ${m.lastName}${m.alreadyRsvped ? ' (already responded)' : ''}`
-                    ).join(', ')}
+                    {partyOthers.map((m, i) => (
+                      <span key={m.id}>
+                        {i > 0 && ', '}
+                        <strong>{m.firstName} {m.lastName}</strong>
+                        {m.alreadyRsvped && <span style={{fontWeight: 400}}> (already responded)</span>}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
