@@ -27,7 +27,7 @@ body {
   background-color: var(--cream);
   background-image: url("/marina_background.png");
   background-size: cover;
-  background-position: center top;
+  background-position: center 30%;
   background-attachment: fixed;
   background-repeat: no-repeat;
   color: var(--text);
@@ -160,9 +160,14 @@ body::before {
   );
 }
 @media (max-width: 480px) {
+  body {
+    background-attachment: scroll;
+    background-position: center bottom;
+  }
   .page {
     padding-left: 36px;
     padding-right: 36px;
+    padding-bottom: 160px;
   }
   .card {
     padding: 32px 20px;
@@ -882,6 +887,58 @@ select {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ── WARMUP OVERLAY ── */
+.warmup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 245, 219, 0.92);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.warmup-box {
+  background: var(--white);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  box-shadow: 0 4px 40px rgba(13, 27, 42, 0.12);
+  padding: 40px 36px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+.warmup-title {
+  font-family: "Londrina Shadow", cursive;
+  font-size: 2rem;
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--gold-light);
+  paint-order: stroke fill;
+  margin-bottom: 12px;
+}
+.warmup-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.warmup-bar-track {
+  height: 6px;
+  background: var(--cream-dark);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.warmup-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--navy), var(--gold));
+  border-radius: 3px;
+  animation: warmupProgress 60s linear forwards;
+}
+@keyframes warmupProgress {
+  from { width: 0%; }
+  to   { width: 95%; }
 }
 
 /* ── PARTY FLOW ── */

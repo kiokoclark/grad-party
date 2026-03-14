@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { lookupGuest, submitRsvp } from '../api';
+import { useState, useEffect } from 'react';
+import { lookupGuest, submitRsvp, pingHealth } from '../api';
 
 export default function RsvpPage() {
   const [view, setView] = useState('form'); // 'form' | 'thankyou' | 'declined'
@@ -28,15 +28,24 @@ export default function RsvpPage() {
   const [submitErr, setSubmitErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const isFirstRender = useRef(true);
+  const [serverReady, setServerReady] = useState(false);
+  const [showWarmup, setShowWarmup] = useState(false);
 
-  // Scroll to top and focus h1 on every step/view transition (not on initial render)
+  // Wake up Render free tier on page load
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    const h1 = document.querySelector('.site-header h1');
-    if (h1) { h1.setAttribute('tabindex', '-1'); h1.focus({ preventScroll: true }); }
-  }, [step, view]);
+    let warmupTimer;
+    let done = false;
+    warmupTimer = setTimeout(() => { if (!done) setShowWarmup(true); }, 3000);
+    pingHealth()
+      .finally(() => {
+        done = true;
+        clearTimeout(warmupTimer);
+        setShowWarmup(false);
+        setServerReady(true);
+      });
+    return () => clearTimeout(warmupTimer);
+  }, []);
+
 
   function resetRsvpForm() {
     setAttending(''); setDietary(''); setPlusOne(''); setPlusOneName('');
@@ -235,6 +244,17 @@ export default function RsvpPage() {
 
   return (
     <div className="page">
+      {showWarmup && (
+        <div className="warmup-overlay">
+          <div className="warmup-box">
+            <p className="warmup-title">Getting the party started…</p>
+            <p className="warmup-sub">The server is waking up. This takes about 30–60 seconds on first visit. Hang tight!</p>
+            <div className="warmup-bar-track">
+              <div className="warmup-bar-fill" />
+            </div>
+          </div>
+        </div>
+      )}
       <Header />
       <div className="view active">
         <div className="card">
@@ -260,8 +280,8 @@ export default function RsvpPage() {
                 {lastNameErr && <div className="field-error">{lastNameErr}</div>}
               </div>
               {notFoundErr && <div className="field-error" style={{marginBottom:12,fontSize:13}}>{notFoundErr}</div>}
-              <button className="btn btn-primary" onClick={handleStep1}>
-                Continue
+              <button className="btn btn-primary" onClick={handleStep1} disabled={!serverReady}>
+                {serverReady ? 'Continue' : 'Warming up…'}
                 <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">
                   <path d="M9 1l4 4m0 0l-4 4M13 5H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>

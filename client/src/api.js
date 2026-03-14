@@ -14,6 +14,9 @@ async function req(method, path, body, auth = false) {
   return res.json();
 }
 
+// Health check (used to wake Render free tier on page load)
+export const pingHealth = () => fetch(`${BASE}/health`).then(r => r.json());
+
 // Public
 export const lookupGuest   = (firstName, lastName) => req('POST', '/api/guests/lookup', { firstName, lastName });
 export const submitRsvp    = (payload) => req('POST', '/api/rsvp', payload);
