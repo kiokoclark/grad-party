@@ -404,7 +404,7 @@ export default function RsvpPage() {
               </div>
 
               <div style={{marginTop: 28}}>
-                {partyQueue.length > 0 && (
+                {partyQueue.length > 0 && attending === 'yes' && (
                   <button className="btn-next-party" onClick={handleNextPartyMember} disabled={submitting}>
                     {submitting ? 'Saving…' : `RSVP for ${partyQueue[0].firstName} ${partyQueue[0].lastName} →`}
                   </button>
