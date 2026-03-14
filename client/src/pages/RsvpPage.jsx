@@ -99,6 +99,9 @@ export default function RsvpPage() {
       const [next, ...remaining] = partyQueue;
       setPartyQueue(remaining);
       setCurrentGuest(next);
+      setAllPartyMembers(prev => prev.map(m =>
+        m.id === currentGuest.id ? { ...m, alreadyRsvped: true } : m
+      ));
       resetRsvpForm();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
