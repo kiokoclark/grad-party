@@ -161,6 +161,7 @@ body::before {
 }
 @media (max-width: 480px) {
   body {
+    background-image: url("/marina_background_mobile.png");
     background-attachment: scroll;
     background-position: center bottom;
   }
