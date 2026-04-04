@@ -107,6 +107,7 @@ function GuestsTab({ toast }) {
   const [guests, setGuests] = useState([]);
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
+  const [altLastNames, setAltLastNames] = useState('');
   const [plusOne, setPlusOne] = useState(false);
   const [children, setChildren] = useState(false);
   const [partyTag, setPartyTag] = useState('');
@@ -118,21 +119,24 @@ function GuestsTab({ toast }) {
 
   function startEdit(g) {
     setFirst(g.firstName); setLast(g.lastName);
+    setAltLastNames(g.altLastNames || '');
     setPlusOne(g.plusOne); setChildren(g.children);
     setPartyTag(g.partyTag || '');
     setEditingId(g.id); setErr('');
   }
   function cancelEdit() {
-    setFirst(''); setLast(''); setPlusOne(false); setChildren(false);
+    setFirst(''); setLast(''); setAltLastNames('');
+    setPlusOne(false); setChildren(false);
     setPartyTag(''); setEditingId(null); setErr('');
   }
 
   async function save() {
     if (!first.trim() || !last.trim()) { setErr('First and last name are required.'); return; }
+    const altLastNamesVal = altLastNames.trim() || null;
     if (editingId) {
-      await updateGuest(editingId, { firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null });
+      await updateGuest(editingId, { firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null, altLastNames: altLastNamesVal });
     } else {
-      await addGuest({ firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null });
+      await addGuest({ firstName: first, lastName: last, plusOne, children, partyTag: partyTag.trim() || null, altLastNames: altLastNamesVal });
     }
     cancelEdit(); load(); toast('Guest saved!');
   }
@@ -172,6 +176,10 @@ function GuestsTab({ toast }) {
           <div className="form-group"><label>Last Name</label>
             <input type="text" placeholder="Last" value={last} onChange={e => setLast(e.target.value)} /></div>
         </div>
+        <div className="form-group" style={{marginTop: 6}}>
+          <label>Alt Last Names <span style={{fontWeight:300,textTransform:'none',letterSpacing:0}}>(optional — comma-separated aliases, e.g. maiden name or partial hyphenated name)</span></label>
+          <input type="text" placeholder="e.g. Jones, SmithJones" value={altLastNames} onChange={e => setAltLastNames(e.target.value)} />
+        </div>
         <div className="checkbox-row">
           <input type="checkbox" id="agPlusOne" checked={plusOne} onChange={e => setPlusOne(e.target.checked)} />
           <label htmlFor="agPlusOne">Allowed to bring a Plus One</label>
@@ -207,7 +215,8 @@ function GuestsTab({ toast }) {
                 {g.plusOne && <span className="badge badge-plus">+ Plus One</span>}
                 {g.children && <span className="badge badge-child">Children</span>}
                 {g.partyTag && <span className="badge badge-party">Party: {g.partyTag}</span>}
-                {!g.plusOne && !g.children && !g.partyTag && <span className="badge badge-none">No extras</span>}
+                {g.altLastNames && <span className="badge badge-none">Also: {g.altLastNames}</span>}
+                {!g.plusOne && !g.children && !g.partyTag && !g.altLastNames && <span className="badge badge-none">No extras</span>}
               </td>
               <td>
                 <button className="icon-btn" onClick={() => startEdit(g)} title="Edit">✏️</button>

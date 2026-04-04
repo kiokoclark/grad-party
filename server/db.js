@@ -35,6 +35,8 @@ async function init() {
 
   // Migrate: add party_tag column if it doesn't exist yet
   try { await db.execute('ALTER TABLE guests ADD COLUMN party_tag TEXT DEFAULT NULL'); } catch (_) {}
+  // Migrate: add alt_last_names column for hyphenated/alias name support
+  try { await db.execute('ALTER TABLE guests ADD COLUMN alt_last_names TEXT DEFAULT NULL'); } catch (_) {}
 
   // Seed defaults on first run
   const existing = await db.execute("SELECT value FROM settings WHERE key = 'adminPwHash'");

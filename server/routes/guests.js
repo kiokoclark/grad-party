@@ -12,6 +12,15 @@ function levenshtein(a, b) {
   return d[m][n];
 }
 
+// Returns all matchable variants of a last name:
+// full normalized form, each hyphen-separated segment, and any alt_last_names aliases.
+function lastNameVariants(lastName, altLastNames) {
+  const norm = normalize(lastName);
+  const parts = lastName.split('-').map(normalize).filter(Boolean);
+  const alts = altLastNames ? altLastNames.split(',').map(s => normalize(s.trim())).filter(Boolean) : [];
+  return [...new Set([norm, ...parts, ...alts])];
+}
+
 // POST /api/guests/lookup  (public)
 router.post('/lookup', async (req, res) => {
   const { firstName, lastName } = req.body;
@@ -25,7 +34,10 @@ router.post('/lookup', async (req, res) => {
   const nf = normalize(firstName), nl = normalize(lastName);
   let best = null, bestScore = Infinity;
   for (const g of rows) {
-    const score = levenshtein(nf, normalize(g.first_name)) + levenshtein(nl, normalize(g.last_name));
+    const fnScore = levenshtein(nf, normalize(g.first_name));
+    const lnVariants = lastNameVariants(g.last_name, g.alt_last_names);
+    const lnScore = Math.min(...lnVariants.map(v => levenshtein(nl, v)));
+    const score = fnScore + lnScore;
     if (score < bestScore) { bestScore = score; best = g; }
   }
 
@@ -83,26 +95,27 @@ router.get('/', requireAuth, async (req, res) => {
     id: g.id, firstName: g.first_name, lastName: g.last_name,
     plusOne: !!g.plus_one, children: !!g.children,
     partyTag: g.party_tag || null,
+    altLastNames: g.alt_last_names || '',
   })));
 });
 
 // POST /api/guests  (admin)
 router.post('/', requireAuth, async (req, res) => {
-  const { firstName, lastName, plusOne, children, partyTag } = req.body;
+  const { firstName, lastName, plusOne, children, partyTag, altLastNames } = req.body;
   if (!firstName || !lastName) return res.status(400).json({ error: 'Name required' });
   const result = await db.execute({
-    sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag) VALUES (?, ?, ?, ?, ?)',
-    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null]
+    sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag, alt_last_names) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null, altLastNames || null]
   });
-  res.json({ id: Number(result.lastInsertRowid), firstName, lastName, plusOne: !!plusOne, children: !!children, partyTag: partyTag || null });
+  res.json({ id: Number(result.lastInsertRowid), firstName, lastName, plusOne: !!plusOne, children: !!children, partyTag: partyTag || null, altLastNames: altLastNames || '' });
 });
 
 // PUT /api/guests/:id  (admin)
 router.put('/:id', requireAuth, async (req, res) => {
-  const { firstName, lastName, plusOne, children, partyTag } = req.body;
+  const { firstName, lastName, plusOne, children, partyTag, altLastNames } = req.body;
   await db.execute({
-    sql: 'UPDATE guests SET first_name=?, last_name=?, plus_one=?, children=?, party_tag=? WHERE id=?',
-    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null, req.params.id]
+    sql: 'UPDATE guests SET first_name=?, last_name=?, plus_one=?, children=?, party_tag=?, alt_last_names=? WHERE id=?',
+    args: [firstName, lastName, plusOne ? 1 : 0, children ? 1 : 0, partyTag || null, altLastNames || null, req.params.id]
   });
   res.json({ ok: true });
 });
@@ -120,8 +133,8 @@ router.post('/import', requireAuth, async (req, res) => {
   const stmts = [{ sql: 'DELETE FROM guests', args: [] }];
   for (const g of guests) {
     stmts.push({
-      sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag) VALUES (?, ?, ?, ?, ?)',
-      args: [g.firstName, g.lastName, g.plusOne ? 1 : 0, g.children ? 1 : 0, g.partyTag || null]
+      sql: 'INSERT INTO guests (first_name, last_name, plus_one, children, party_tag, alt_last_names) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [g.firstName, g.lastName, g.plusOne ? 1 : 0, g.children ? 1 : 0, g.partyTag || null, g.altLastNames || null]
     });
   }
   await db.batch(stmts, 'write');
